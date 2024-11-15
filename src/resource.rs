@@ -1,40 +1,26 @@
 use std::fmt::Debug;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
-use crate::traits::Matches;
+use crate::engine::EngineTrait;
+use crate::traits::MatchesTrait;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub struct ResourceAbstract<
-    Partition,
-    Service,
-    Region,
-    AccountID,
-    ResourceType,
-    ResourceID
-> {
+pub struct ResourceAbstract<Engine: EngineTrait> {
     //The partition in which the resource is located. A partition is a group of AWS Regions. Each AWS account is scoped to one partition.
-    pub partition: Option<Partition>,
+    pub partition: Option<Engine::Partition>,
     // The service namespace that identifies the AWS product.
-    pub service: Option<Service>,
+    pub service: Option<Engine::Service>,
     // The Region code. E.g. us-east-2
-    pub region: Option<Region>,
+    pub region: Option<Engine::Region>,
     // The ID of the account that owns the resource.
-    pub account_id: Option<AccountID>,
+    pub account_id: Option<Engine::AccountID>,
     // E.g. vpc for virtual private cloud (VPC)
-    pub resource_type: Option<ResourceType>,
+    pub resource_type: Option<Engine::ResourceType>,
     // The resource identifier. The name of the resource, the ID of the resource, or a resource path. Some identifiers include a parent resource sub-resource-type/parent-resource/sub-resource) or a qualifier such as a version (resource-type:resource-name:qualifier)
-    pub resource_id: Option<ResourceID>,
+    pub resource_id: Option<Engine::ResourceID>,
 }
 
-impl<
-    Partition: FromStr<Err=String>,
-    Service: FromStr<Err=String>,
-    Region: FromStr<Err=String>,
-    AccountID: FromStr<Err=String>,
-    ResourceType: FromStr<Err=String>,
-    ResourceID: FromStr<Err=String>,
-> FromStr for ResourceAbstract<Partition, Service, Region, AccountID, ResourceType, ResourceID>
+impl<Engine: EngineTrait> FromStr for ResourceAbstract<Engine>
 {
     type Err = String;
 
@@ -53,12 +39,12 @@ impl<
         }
 
         // Parse the components with proper error handling
-        let partition = flip(split.next().map(|f| Partition::from_str(f)))?;
-        let service = flip(split.next().map(|f| Service::from_str(f)))?;
-        let region = flip(split.next().map(|f| Region::from_str(f)))?;
-        let account_id = flip(split.next().map(|f| AccountID::from_str(f)))?;
-        let resource_type = flip(split.next().map(|f| ResourceType::from_str(f)))?;
-        let resource_id = flip(split.next().map(|f| ResourceID::from_str(f)))?;
+        let partition = flip(split.next().map(|f| Engine::Partition::from_str(f)))?;
+        let service = flip(split.next().map(|f| Engine::Service::from_str(f)))?;
+        let region = flip(split.next().map(|f| Engine::Region::from_str(f)))?;
+        let account_id = flip(split.next().map(|f| Engine::AccountID::from_str(f)))?;
+        let resource_type = flip(split.next().map(|f| Engine::ResourceType::from_str(f)))?;
+        let resource_id = flip(split.next().map(|f| Engine::ResourceID::from_str(f)))?;
 
         let resource = ResourceAbstract {
             partition,
@@ -73,15 +59,8 @@ impl<
     }
 }
 
-impl<
-    Partition: Matches<bool>,
-    Service: Matches<bool>,
-    Region: Matches<bool>,
-    AccountID: Matches<bool>,
-    ResourceType: Matches<bool>,
-    ResourceID: Matches<bool>
-> Matches<bool> for ResourceAbstract<Partition, Service, Region, AccountID, ResourceType, ResourceID> {
-    fn matches(&self, other: &ResourceAbstract<Partition, Service, Region, AccountID, ResourceType, ResourceID>) -> Result<bool, &'static str> {
+impl<Engine: EngineTrait> MatchesTrait<bool> for ResourceAbstract<Engine> {
+    fn matches(&self, other: &ResourceAbstract<Engine>) -> Result<bool, &'static str> {
         match (self.partition.as_ref(), other.partition.as_ref()) {
             (Some(l), Some(r)) => {
                 if !l.matches(r)? {

@@ -1,7 +1,9 @@
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::traits::MatchesTrait;
+use matches_macro::Matches;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Matches)]
 pub enum AwsRegion {
     #[serde(rename = "us-east-2", alias = "us east ohio", alias = "us east (ohio)")]
     UsEastOhio,

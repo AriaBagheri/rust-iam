@@ -1,7 +1,9 @@
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::traits::MatchesTrait;
+use matches_macro::Matches;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Matches, Clone)]
 pub enum AwsPartition {
     #[serde(rename="aws")]
     Aws,

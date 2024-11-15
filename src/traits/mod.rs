@@ -1,2 +1,2 @@
 mod matches;
-pub use matches::Matches;
+pub use matches::MatchesTrait;
