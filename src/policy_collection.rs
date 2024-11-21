@@ -15,7 +15,7 @@ use crate::engine::EngineTrait;
 /// The `PolicyCollection` is typically used in systems where multiple policies must be evaluated
 /// together to decide access control. Each policy in the collection contains a set of statements
 /// that define allow or deny rules for actions on resources.
-pub struct PolicyCollection<Engine: EngineTrait>(Vec<Policy<Engine>>);
+pub struct PolicyCollection<Engine: EngineTrait>(pub Vec<Policy<Engine>>);
 
 /// Implements the `Extend` trait for `PolicyCollection`, allowing policies to be added from an iterator.
 ///
