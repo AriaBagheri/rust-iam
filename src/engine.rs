@@ -71,25 +71,25 @@ use crate::traits::MatchesTrait;
 ///     type ResourceID = String;
 /// }
 /// ```
-pub trait EngineTrait {
+pub trait EngineTrait: Debug + Default + Copy + Serialize + DeserializeOwned + Sync + Send + Clone + 'static {
     /// The type representing an action within the engine.
-    type Action: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type Action: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing a partition (e.g., a system or namespace).
-    type Partition: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type Partition: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing a service provided by the system.
-    type Service: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type Service: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing a geographical region.
-    type Region: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type Region: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing an account or user identifier.
-    type AccountID: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type AccountID: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing the resource type (e.g., "bucket", "instance").
-    type ResourceType: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type ResourceType: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 
     /// The type representing the unique identifier for a resource.
-    type ResourceID: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + PartialEq + Clone;
+    type ResourceID: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;
 }

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::engine::EngineTrait;
 use crate::traits::MatchesTrait;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ResourceAbstract<Engine: EngineTrait> {
     //The partition in which the resource is located. A partition is a group of AWS Regions. Each AWS account is scoped to one partition.
     pub partition: Option<Engine::Partition>,
@@ -18,6 +18,62 @@ pub struct ResourceAbstract<Engine: EngineTrait> {
     pub resource_type: Option<Engine::ResourceType>,
     // The resource identifier. The name of the resource, the ID of the resource, or a resource path. Some identifiers include a parent resource sub-resource-type/parent-resource/sub-resource) or a qualifier such as a version (resource-type:resource-name:qualifier)
     pub resource_id: Option<Engine::ResourceID>,
+}
+use serde::ser::{self, Serializer};
+use std::fmt;
+impl<Engine: EngineTrait> Serialize for ResourceAbstract<Engine> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        fn serialize_field<T: ToString>(field: &Option<T>) -> String {
+            match field {
+                Some(value) => value.to_string(),
+                None => "".to_string(),
+            }
+        }
+
+        // Construct the colon-separated string
+        let serialized_string = format!(
+            "arn:{}:{}:{}:{}:{}:{}",
+            serialize_field(&self.partition),
+            serialize_field(&self.service),
+            serialize_field(&self.region),
+            serialize_field(&self.account_id),
+            serialize_field(&self.resource_type),
+            serialize_field(&self.resource_id)
+        );
+
+        // Serialize the resulting string
+        serializer.serialize_str(&serialized_string)
+    }
+}
+
+use serde::de::{self, Deserializer, Error, MapAccess, Visitor};
+impl<'de, Engine: EngineTrait> Deserialize<'de> for ResourceAbstract<Engine> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ResourceAbstractVisitor<Engine: EngineTrait>(std::marker::PhantomData<Engine>);
+
+        impl<'de, Engine: EngineTrait> Visitor<'de> for ResourceAbstractVisitor<Engine> {
+            type Value = ResourceAbstract<Engine>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string that can be parsed into a ResourceAbstract")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                ResourceAbstract::<Engine>::from_str(value).map_err(de::Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(ResourceAbstractVisitor(std::marker::PhantomData))
+    }
 }
 
 impl<Engine: EngineTrait> FromStr for ResourceAbstract<Engine>

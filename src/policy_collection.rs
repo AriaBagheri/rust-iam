@@ -15,7 +15,139 @@ use crate::engine::EngineTrait;
 /// The `PolicyCollection` is typically used in systems where multiple policies must be evaluated
 /// together to decide access control. Each policy in the collection contains a set of statements
 /// that define allow or deny rules for actions on resources.
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PolicyCollection<Engine: EngineTrait>(pub Vec<Policy<Engine>>);
+
+#[cfg(feature = "with-sqlx")]
+impl<'r, Engine> sqlx::Decode<'r, sqlx::Postgres> for PolicyCollection<Engine>
+where
+    Engine: EngineTrait, // Ensure Engine has a default implementation
+{
+    fn decode(value: sqlx::postgres::PgValueRef<'r>) -> Result<Self, Box<(dyn StdError + Send + Sync + 'static)>> {
+        // Decode the column into a Vec<String> and wrap it in PolicyCollection
+        let decoded = <Vec<Policy<Engine>> as sqlx::Decode<sqlx::Postgres>>::decode(value)?;
+        Ok(PolicyCollection(decoded))
+    }
+}
+
+#[cfg(feature = "with-sqlx")]
+impl<Engine: EngineTrait> sqlx::Type<sqlx::Postgres> for PolicyCollection<Engine> {
+    fn type_info() -> sqlx::postgres::PgTypeInfo {
+        <Vec<serde_json::Value> as sqlx::Type<sqlx::Postgres>>::type_info()
+    }
+}
+
+#[cfg(feature = "with-sqlx")]
+impl<'q, Engine> sqlx::Encode<'q, sqlx::Postgres> for PolicyCollection<Engine>
+where
+    Engine: EngineTrait,
+{
+    fn encode_by_ref(&self, buf: &mut sqlx::postgres::PgArgumentBuffer) -> Result<sqlx::encode::IsNull, Box<(dyn StdError + Send + Sync + 'static)>> {
+        self.0.encode_by_ref(buf)
+    }
+}
+
+use serde::de::{Deserialize, Deserializer, Error, SeqAccess, StdError, Visitor};
+use std::fmt;
+
+impl<'de, Engine: EngineTrait> Deserialize<'de> for PolicyCollection<Engine> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct PolicyCollectionVisitor<Engine: EngineTrait>(std::marker::PhantomData<Engine>);
+
+        impl<'de, Engine: EngineTrait> Visitor<'de> for PolicyCollectionVisitor<Engine> {
+            type Value = PolicyCollection<Engine>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a list of policies")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut policies = Vec::new();
+
+                while let Some(policy) = seq.next_element::<Policy<Engine>>()? {
+                    policies.push(policy);
+                }
+
+                Ok(PolicyCollection(policies))
+            }
+        }
+
+        deserializer.deserialize_seq(PolicyCollectionVisitor(std::marker::PhantomData))
+    }
+}
+
+#[cfg(feature = "with-sea-orm")]
+impl<Engine: EngineTrait> Into<sea_orm::Value> for PolicyCollection<Engine> {
+    fn into(self) -> sea_orm::Value {
+        sea_orm::Value::Array(sea_orm::sea_query::ArrayType::Json, Some(Box::new(self.0.into_iter().map(|p| Into::<sea_orm::Value>::into(p)).collect())))
+    }
+}
+
+#[cfg(feature = "with-sea-orm")]
+use sea_orm::TryGetableFromJson;
+
+#[cfg(feature = "with-sea-orm")]
+impl<Engine: EngineTrait> TryGetableFromJson for PolicyCollection<Engine> {
+
+}
+
+#[cfg(feature = "with-sea-orm")]
+impl<Engine: EngineTrait> sea_orm::sea_query::ValueType for PolicyCollection<Engine> {
+    fn try_from(v: sea_orm::sea_query::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
+        if let sea_orm::sea_query::Value::Array(_, Some(values)) = v {
+            let policies: Vec<Policy<Engine>> = values
+                .into_iter()
+                .map(|val| match val {
+                    sea_orm::sea_query::Value::Json(Some(json)) => {
+                        serde_json::from_value(json.deref().clone()).map_err(|_| sea_orm::sea_query::ValueTypeErr)
+                    }
+                    _ => Err(sea_orm::sea_query::ValueTypeErr),
+                })
+                .collect::<Result<_, _>>()?;
+            Ok(PolicyCollection(policies))
+        } else {
+            Err(sea_orm::sea_query::ValueTypeErr)
+        }
+    }
+
+    fn type_name() -> String {
+        serde_json::Value::type_name()
+    }
+
+    fn array_type() -> sea_orm::sea_query::ArrayType {
+        serde_json::Value::array_type()
+    }
+
+    fn column_type() -> sea_orm::ColumnType {
+        serde_json::Value::column_type()
+    }
+}
+
+impl<Engine: EngineTrait> Deref for PolicyCollection<Engine> {
+    type Target = Vec<Policy<Engine>>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+use std::ops::{Deref, DerefMut};
+impl<Engine: EngineTrait> DerefMut for PolicyCollection<Engine> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<Engine: EngineTrait> Default for PolicyCollection<Engine> {
+    fn default() -> Self {
+        Self(Vec::default())
+    }
+}
 
 /// Implements the `Extend` trait for `PolicyCollection`, allowing policies to be added from an iterator.
 ///

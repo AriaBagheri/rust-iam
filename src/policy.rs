@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use crate::{MaybeEffect, ResourceAbstract, Statement};
+use serde::de::{DeserializeOwned, StdError};
+use crate::{MaybeEffect, PolicyCollection, ResourceAbstract, Statement};
 use crate::engine::EngineTrait;
 
 /// Represents an access control policy within the system.
@@ -12,14 +13,8 @@ use crate::engine::EngineTrait;
 /// # Type Parameters
 /// - `Engine`: A type implementing the `EngineTrait`, which defines the core
 ///   types and behaviors used by the policy (e.g., actions, resources).
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, PartialEq, Eq, Clone)]
 pub struct Policy<Engine: EngineTrait> {
-    /// An optional unique identifier for the policy.
-    ///
-    /// This identifier can be used to reference or manage the policy within
-    /// the system. It is not required for the policy's functionality.
-    pub id: Option<String>,
-
     /// An optional human-readable name for the policy.
     ///
     /// This name is intended for display purposes and can help users
@@ -32,6 +27,52 @@ pub struct Policy<Engine: EngineTrait> {
     /// or denied for specific resources. Policies are evaluated by iterating
     /// through these statements.
     pub statements: Vec<Statement<Engine>>,
+}
+
+
+#[cfg(feature = "with-sqlx")]
+impl<'r, Engine> sqlx::Decode<'r, sqlx::Postgres> for Policy<Engine>
+where
+    Engine: EngineTrait, // Ensure Engine has a default implementation
+{
+    fn decode(value: sqlx::postgres::PgValueRef<'r>) -> Result<Self, Box<(dyn StdError + Send + Sync + 'static)>> {
+        // Decode the column into a Vec<String> and wrap it in PolicyCollection
+        let decoded = <serde_json::Value as sqlx::Decode<sqlx::Postgres>>::decode(value)?;
+        let policy: Policy<Engine> = serde_json::from_value(decoded)
+            .map_err(|e| sqlx::Error::Decode(format!("JSON decode error: {}", e).into()))?;
+        Ok(policy)
+    }
+}
+
+#[cfg(feature = "with-sqlx")]
+impl<Engine: EngineTrait> sqlx::Type<sqlx::Postgres> for Policy<Engine> {
+    fn type_info() -> sqlx::postgres::PgTypeInfo {
+        <serde_json::Value as sqlx::Type<sqlx::Postgres>>::type_info()
+    }
+}
+
+#[cfg(feature = "with-sqlx")]
+impl<'q, Engine> sqlx::Encode<'q, sqlx::Postgres> for Policy<Engine>
+where
+    Engine: EngineTrait,
+{
+    fn encode_by_ref(&self, buf: &mut sqlx::postgres::PgArgumentBuffer) -> Result<sqlx::encode::IsNull, Box<(dyn StdError + Send + Sync + 'static)>> {
+        self.encode_by_ref(buf)
+    }
+}
+
+
+#[cfg(feature = "with-sea-orm")]
+use serde_json::json;
+
+#[cfg(feature = "with-sea-orm")]
+impl<Engine: EngineTrait> Into<sea_orm::Value> for Policy<Engine> {
+    fn into(self) -> sea_orm::Value {
+        sea_orm::Value::Json(Some(Box::new(json!({
+            "name": self.name,
+            "statements": self.statements,
+        }))))
+    }
 }
 
 impl<Engine: EngineTrait> Policy<Engine> {
@@ -67,7 +108,6 @@ impl<Engine: EngineTrait> Policy<Engine> {
     /// }
     ///
     /// let policy = Policy::<MyEngine> {
-    ///     id: Some("policy_1".to_string()),
     ///     name: Some("Example Policy".to_string()),
     ///     statements: vec![], // Add actual statements here
     /// };
@@ -95,5 +135,51 @@ impl<Engine: EngineTrait> Policy<Engine> {
         } else {
             MaybeEffect::NotSpecified
         }
+    }
+}
+
+use serde::de::{Deserializer, Error, MapAccess, Visitor};
+use std::fmt;
+impl<'de, Engine: EngineTrait + DeserializeOwned> Deserialize<'de> for Policy<Engine> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct PolicyVisitor<Engine: EngineTrait + DeserializeOwned>(std::marker::PhantomData<Engine>);
+
+        impl<'de, Engine: EngineTrait + DeserializeOwned> Visitor<'de> for PolicyVisitor<Engine> {
+            type Value = Policy<Engine>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a valid Policy object with id, name, and statements")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut name = None;
+                let mut statements = None;
+
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "name" => name = Some(map.next_value()?),
+                        "statements" => statements = Some(map.next_value()?),
+                        _ => return Err(Error::unknown_field(&key, &["name", "statements"])),
+                    }
+                }
+
+                Ok(Policy {
+                    name,
+                    statements: statements.ok_or_else(|| Error::missing_field("statements"))?,
+                })
+            }
+        }
+
+        deserializer.deserialize_struct(
+            "Policy",
+            &["name", "statements"],
+            PolicyVisitor(std::marker::PhantomData),
+        )
     }
 }

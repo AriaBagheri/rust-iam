@@ -163,6 +163,46 @@ impl FromStr for AwsRegion {
     }
 }
 
+impl ToString for AwsRegion {
+    fn to_string(&self) -> String {
+        match self {
+            AwsRegion::UsEastOhio => "us-east-2",
+            AwsRegion::UsEastNVirginia => "us-east-1",
+            AwsRegion::UsWestNCalifornia => "us-west-1",
+            AwsRegion::UsWestOregon => "us-west-2",
+            AwsRegion::AfricaCapeTown => "af-south-1",
+            AwsRegion::AsiaPacificHongKong => "ap-east-1",
+            AwsRegion::AsiaPacificHyderabad => "ap-south-2",
+            AwsRegion::AsiaPacificJakarta => "ap-southeast-3",
+            AwsRegion::AsiaPacificMalaysia => "ap-southeast-5",
+            AwsRegion::AsiaPacificMelbourne => "ap-southeast-4",
+            AwsRegion::AsiaPacificMumbai => "ap-south-1",
+            AwsRegion::AsiaPacificOsaka => "ap-northeast-3",
+            AwsRegion::AsiaPacificSeoul => "ap-northeast-2",
+            AwsRegion::AsiaPacificSingapore => "ap-southeast-1",
+            AwsRegion::AsiaPacificSydney => "ap-southeast-2",
+            AwsRegion::AsiaPacificTokyo => "ap-northeast-1",
+            AwsRegion::CanadaCentral => "ca-central-1",
+            AwsRegion::CanadaWestCalgary => "ca-west-1",
+            AwsRegion::EuropeFrankfurt => "eu-central-1",
+            AwsRegion::EuropeIreland => "eu-west-1",
+            AwsRegion::EuropeLondon => "eu-west-2",
+            AwsRegion::EuropeMilan => "eu-south-1",
+            AwsRegion::EuropeParis => "eu-west-3",
+            AwsRegion::EuropeSpain => "eu-south-2",
+            AwsRegion::EuropeStockholm => "eu-north-1",
+            AwsRegion::EuropeZurich => "eu-central-2",
+            AwsRegion::IsraelTelAviv => "il-central-1",
+            AwsRegion::MiddleEastBahrain => "me-south-1",
+            AwsRegion::MiddleEastUAE => "me-central-1",
+            AwsRegion::SouthAmericaSaoPaulo => "sa-east-1",
+            AwsRegion::AwsGovCloudUsEast => "us-gov-east-1",
+            AwsRegion::AwsGovCloudUsWest => "us-gov-west-1",
+        }
+            .to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

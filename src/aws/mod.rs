@@ -12,9 +12,10 @@ use crate::engine::EngineTrait;
 pub use aws_regions::*;
 pub use aws_partitions::*;
 
+#[derive(Debug, Copy, Default, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct AwsEngine{}
 
-#[derive(Debug, PartialEq, Matches, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Matches, Serialize, Deserialize, Clone)]
 #[wildcard_matching]
 pub struct WildString(pub String);
 
