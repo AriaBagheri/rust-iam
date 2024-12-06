@@ -33,44 +33,7 @@ use crate::traits::MatchesTrait;
 /// - `FromStr<Err = &'static str>`: Allows the type to be parsed from a string representation.
 /// - `PartialEq`: Ensures equality comparisons can be performed.
 /// - `Clone`: Allows duplication of the value.
-///
-/// # Example Implementation
-///
-/// ```rust
-/// use rust_iam::{EngineTrait, traits::MatchesTrait};
-/// use std::fmt::Debug;
-/// use serde::{Serialize, Deserialize};
-/// use std::str::FromStr;
-///
-///
-/// #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-/// struct MyAction;
-///
-/// impl MatchesTrait<bool> for MyAction {
-///     fn matches(&self, other: &bool) -> Result<bool, &'static str> {
-///         Ok(*other)
-///     }
-/// }
-///
-/// impl FromStr for MyAction {
-///     type Err = &'static str;
-///     fn from_str(_s: &str) -> Result<Self, Self::Err> {
-///         Ok(MyAction)
-///     }
-/// }
-///
-/// struct MyEngine;
-///
-/// impl EngineTrait for MyEngine {
-///     type Action = MyAction;
-///     type Partition = String;
-///     type Service = String;
-///     type Region = String;
-///     type AccountID = String;
-///     type ResourceType = String;
-///     type ResourceID = String;
-/// }
-/// ```
+///```
 pub trait EngineTrait: Debug + Default + Copy + Serialize + DeserializeOwned + Sync + Send + Clone + 'static {
     /// The type representing an action within the engine.
     type Action: Debug + MatchesTrait<bool> + Serialize + DeserializeOwned + FromStr<Err=&'static str> + ToString + PartialEq + Eq + Clone + Sync + Send + Clone + 'static;

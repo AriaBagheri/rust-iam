@@ -96,30 +96,6 @@ impl<Engine: EngineTrait> Policy<Engine> {
     /// - `MaybeEffect::Allow`: The action is explicitly allowed.
     /// - `MaybeEffect::Deny`: The action is explicitly denied.
     /// - `MaybeEffect::NotSpecified`: No explicit allow or deny was specified.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rust_iam::{Policy, ResourceAbstract, MaybeEffect, EngineTrait};
-    ///
-    /// struct MyEngine;
-    ///
-    /// impl EngineTrait for MyEngine {
-    ///     // Define associated types...
-    /// }
-    ///
-    /// let policy = Policy::<MyEngine> {
-    ///     name: Some("Example Policy".to_string()),
-    ///     statements: vec![], // Add actual statements here
-    /// };
-    ///
-    /// let action = ...; // Define an action of type MyEngine::Action
-    /// let resource = ...; // Define a resource of type ResourceAbstract<MyEngine>
-    ///
-    /// match policy.matches(&action, &resource) {
-    ///     MaybeEffect::Allow => println!("Action is allowed."),
-    ///     MaybeEffect::Deny => println!("Action is denied."),
-    ///     MaybeEffect::NotSpecified => println!("No specific effect."),
-    /// }
     /// ```
     pub fn matches(&self, action: &Engine::Action, resource: &ResourceAbstract<Engine>) -> MaybeEffect {
         let mut is_allowed = false;

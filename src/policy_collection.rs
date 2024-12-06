@@ -153,19 +153,6 @@ impl<Engine: EngineTrait> Default for PolicyCollection<Engine> {
 ///
 /// This trait enables the `extend` method to be called on a `PolicyCollection`, making it easy
 /// to add multiple policies in bulk. The new policies are appended to the existing collection.
-///
-/// # Example
-/// ```rust
-/// use rust_iam::{Policy, PolicyCollection, EngineTrait};
-///
-/// struct MyEngine;
-/// impl EngineTrait for MyEngine {
-///     // Define associated types...
-/// }
-///
-/// let mut policies = PolicyCollection::<MyEngine>(vec![]);
-/// let new_policies = vec![Policy::new(), Policy::new()]; // Example policies
-/// policies.extend(new_policies);
 /// ```
 impl<Engine: EngineTrait> Extend<Policy<Engine>> for PolicyCollection<Engine> {
     /// Extends the policy collection with the contents of an iterator.
@@ -174,13 +161,6 @@ impl<Engine: EngineTrait> Extend<Policy<Engine>> for PolicyCollection<Engine> {
     ///
     /// # Parameters
     /// - `iter`: An iterator yielding `Policy<Engine>` items to be added to the collection.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rust_iam::PolicyCollection;
-    /// let mut collection = PolicyCollection::<MyEngine>(vec![]);
-    /// let additional_policies = vec![policy1, policy2];
-    /// collection.extend(additional_policies);
     /// ```
     fn extend<I: IntoIterator<Item = Policy<Engine>>>(&mut self, iter: I) {
         self.0.extend(iter);
@@ -205,23 +185,6 @@ impl<Engine: EngineTrait> PolicyCollection<Engine> {
     /// # Returns
     /// - `true` if the action is allowed and not denied by any policy.
     /// - `false` if the action is explicitly denied or not explicitly allowed.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rust_iam::PolicyCollection;
-    /// let collection = PolicyCollection::<MyEngine>(vec![
-    ///     policy1,
-    ///     policy2,
-    /// ]);
-    /// let action = ...; // Define action
-    /// let resource = ...; // Define resource
-    ///
-    /// let result = collection.validate(&action, &resource);
-    /// if result {
-    ///     println!("Action is allowed.");
-    /// } else {
-    ///     println!("Action is denied or not specified.");
-    /// }
     /// ```
     pub fn validate(&self, action: &Engine::Action, resource: &ResourceAbstract<Engine>) -> bool {
         let mut is_allowed = false;

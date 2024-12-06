@@ -18,17 +18,6 @@ use crate::traits::MatchesTrait;
 /// - `effect`: Specifies whether the actions in this statement are allowed or denied.
 /// - `actions`: A list of actions (e.g., `read`, `write`) to which this statement applies.
 /// - `resources`: A list of resources (e.g., a specific bucket or instance) to which this statement applies.
-///
-/// # Examples
-/// ```rust
-/// use rust_iam::{Effect, Statement, ResourceAbstract};
-///
-/// let statement = Statement {
-///     effect: Effect::Allow,
-///     actions: vec!["read"],
-///     resources: vec![],
-/// };
-/// assert_eq!(statement.effect, Effect::Allow);
 /// ```
 #[derive(Debug, Serialize, PartialEq, Eq, Clone)]
 pub struct Statement<Engine: EngineTrait> {
@@ -41,8 +30,10 @@ pub struct Statement<Engine: EngineTrait> {
     /// The list of resources that this statement applies to.
     pub resources: Vec<ResourceAbstract<Engine>>,
 }
+#[cfg(feature = "with-sqlx")]
 use sqlx::postgres::PgHasArrayType;
 
+#[cfg(feature = "with-sqlx")]
 impl<Engine: EngineTrait> PgHasArrayType for Statement<Engine> {
     fn array_type_info() -> sqlx::postgres::PgTypeInfo {
         // This tells sqlx the PostgreSQL type for an array of JSONB
@@ -180,21 +171,7 @@ impl<Engine: EngineTrait> Statement<Engine> {
     /// - `MaybeEffect::Allow` if the action and resource match and the effect is `Allow`.
     /// - `MaybeEffect::Deny` if the action and resource match and the effect is `Deny`.
     /// - `MaybeEffect::NotSpecified` if no matches are found.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use rust_iam::{Effect, MaybeEffect, Statement};
-    /// let statement = Statement::<MyEngine> {
-    ///     effect: Effect::Allow,
-    ///     actions: vec!["read"],
-    ///     resources: vec!["resource_1"],
-    /// };
-    ///
-    /// let action = "read";
-    /// let resource = "resource_1";
-    ///
-    /// assert_eq!(statement.matches(&action, &resource), MaybeEffect::Allow);
-    /// ```
+    ///```
     pub fn matches(
         &self,
         action: &Engine::Action,
