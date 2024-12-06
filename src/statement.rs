@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::{Effect, EngineTrait, Policy, ResourceAbstract};
+use crate::{Effect, EngineTrait, ResourceAbstract};
 use crate::traits::MatchesTrait;
 
 /// Represents a statement in an IAM policy, defining access control rules for actions and resources.

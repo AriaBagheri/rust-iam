@@ -47,7 +47,7 @@ where
     }
 }
 
-use serde::de::{Deserialize, Deserializer, Error, SeqAccess, StdError, Visitor};
+use serde::de::{Deserialize, Deserializer, SeqAccess, StdError, Visitor};
 use std::fmt;
 
 impl<'de, Engine: EngineTrait> Deserialize<'de> for PolicyCollection<Engine> {

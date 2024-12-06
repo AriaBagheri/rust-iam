@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde::de::{DeserializeOwned, StdError};
-use crate::{MaybeEffect, PolicyCollection, ResourceAbstract, Statement};
+use crate::{MaybeEffect, ResourceAbstract, Statement};
 use crate::engine::EngineTrait;
 
 /// Represents an access control policy within the system.
